@@ -77,11 +77,14 @@ func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data 
 
 	// on initial run there won't be any state
 	if resp.StatusCode == http.StatusNoContent {
+		logger.Printf("no content found: %s", url)
 		return nil, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid response code from GET to %s: %d", url, resp.StatusCode)
+		body, _ := httputil.DumpResponse(resp, true)
+		return nil, fmt.Errorf("invalid response code from GET to %s: %d - %s",
+			url, resp.StatusCode, body)
 	}
 
 	content, err := ioutil.ReadAll(resp.Body)
