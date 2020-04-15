@@ -73,7 +73,7 @@ func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data 
 	}
 	defer resp.Body.Close()
 
-	logger.Printf("%s GET: %d (%s)", url, resp.StatusCode, http.StatusText(resp.StatusCode))
+	//logger.Printf("%s GET: %d (%s)", url, resp.StatusCode, http.StatusText(resp.StatusCode))
 
 	// on initial run there won't be any state
 	if resp.StatusCode == http.StatusNoContent {
@@ -151,7 +151,7 @@ func (c *Client) post(url string, data interface{}) error {
 	}
 	defer resp.Body.Close()
 
-	logger.Printf("%s POST: %d (%s)", url, resp.StatusCode, http.StatusText(resp.StatusCode))
+	//logger.Printf("%s POST: %d (%s)", url, resp.StatusCode, http.StatusText(resp.StatusCode))
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		dump, _ := httputil.DumpResponse(resp, true)
