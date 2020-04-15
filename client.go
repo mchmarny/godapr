@@ -76,7 +76,9 @@ func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data 
 	logger.Printf("%s GET: %d (%s)", url, resp.StatusCode, http.StatusText(resp.StatusCode))
 
 	// on initial run there won't be any state
-	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusUnauthorized {
+	if resp.StatusCode == http.StatusNoContent ||
+		resp.StatusCode == http.StatusNotFound ||
+		resp.StatusCode == http.StatusUnauthorized {
 		return nil, nil
 	}
 
