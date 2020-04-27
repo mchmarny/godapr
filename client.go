@@ -20,7 +20,7 @@ var (
 	// DefaultHTTPTimeout is the default HTTP client timeout
 	DefaultHTTPTimeout = time.Second * 30
 	// DefaultConsistency is the state store consistency option setting
-	DefaultConsistency = "strong" // override defaults (eventual)
+	DefaultConsistency = "eventual" // override defaults (eventual)
 	// DefaultConcurrency is the state store concurrency option setting
 	DefaultConcurrency = "last-write" // override defaults (first-write)
 	// DefaultRetryPolicyInterval is the state store retry policy interval setting
@@ -31,12 +31,24 @@ var (
 	DefaultRetryPolicyPattern = "exponential"
 )
 
-// NewClient creates valid instance of Client
-// baseURL (e.g. http://localhost:3500)
-// API version and function (state, publish) will be added by client
-func NewClient(baseURL string) (client *Client) {
+// NewClient creates instance of dapr Client using http://localhost:PORT
+// where PORT is the value of DAPR_HTTP_PORT env var defaulted to 3500
+func NewClient() (client *Client) {
+	port := os.Getenv("DAPR_HTTP_PORT")
+	if port == "" {
+		port = "3500"
+	}
+	url := fmt.Sprintf("http://localhost:%s", port)
+	return NewClientWithURL(url)
+}
+
+// NewClientWithURL creates valid instance of Client using provided url
+func NewClientWithURL(url string) (client *Client) {
+	if url == "" {
+		url = "http://localhost:3500"
+	}
 	return &Client{
-		BaseURL:     baseURL,
+		BaseURL:     url,
 		HTTPTimeout: DefaultHTTPTimeout,
 	}
 }
