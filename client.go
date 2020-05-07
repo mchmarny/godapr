@@ -62,7 +62,6 @@ type Client struct {
 // GetDataWithOptions gets content for specific key in state store
 // TODO: implement with StateOptions
 func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data []byte, err error) {
-
 	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.BaseURL, store, key)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -104,7 +103,6 @@ func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data 
 	}
 
 	return content, nil
-
 }
 
 // GetData gets content for specific key in state store
@@ -121,7 +119,6 @@ func (c *Client) Save(store string, data *StateData) error {
 
 // SaveData saves data into state store for specific key
 func (c *Client) SaveData(store, key string, data interface{}) error {
-
 	state := &StateData{
 		Key:   key,
 		Value: data,
@@ -135,7 +132,6 @@ func (c *Client) SaveData(store, key string, data interface{}) error {
 	}
 
 	return c.Save(store, state)
-
 }
 
 // Publish serializes data to JSON and publishes it onto specified topic
@@ -150,8 +146,30 @@ func (c *Client) Send(binding string, data interface{}) error {
 	return c.post(url, data)
 }
 
-func (c *Client) post(url string, data interface{}) error {
+// Invoke serializes input data to JSON and invokes the remote service method
+func (c *Client) Invoke(service, method string, in interface{}) (out []byte, err error) {
+	url := fmt.Sprintf("%s/v1.0/invoke/%s/method/%s", c.BaseURL, service, method)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.newHTTPClient().Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error invoking service: %s", url)
+	}
+	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid response code from GET to %s: %d", url, resp.StatusCode)
+	}
+
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error reading response from invoke to %s", url)
+	}
+
+	return content, nil
+}
+
+func (c *Client) post(url string, data interface{}) error {
 	b, _ := json.Marshal(data)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -171,7 +189,6 @@ func (c *Client) post(url string, data interface{}) error {
 	}
 
 	return nil
-
 }
 
 func (c *Client) newHTTPClient() *http.Client {
