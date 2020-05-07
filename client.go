@@ -59,9 +59,9 @@ type Client struct {
 	HTTPTimeout time.Duration
 }
 
-// GetDataWithOptions gets content for specific key in state store
+// GetStateWithOptions gets content for specific key in state store
 // TODO: implement with StateOptions
-func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data []byte, err error) {
+func (c *Client) GetStateWithOptions(store, key string, opt *StateOptions) (data []byte, err error) {
 	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.BaseURL, store, key)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -105,20 +105,20 @@ func (c *Client) GetDataWithOptions(store, key string, opt *StateOptions) (data 
 	return content, nil
 }
 
-// GetData gets content for specific key in state store
-func (c *Client) GetData(store, key string) (data []byte, err error) {
-	return c.GetDataWithOptions(store, key, nil)
+// GetState gets content for specific key in state store
+func (c *Client) GetState(store, key string) (data []byte, err error) {
+	return c.GetStateWithOptions(store, key, nil)
 }
 
-// Save saves state data into state store
-func (c *Client) Save(store string, data *StateData) error {
+// SaveStateData saves state data into state store
+func (c *Client) SaveStateData(store string, data *StateData) error {
 	list := []*StateData{data}
 	url := fmt.Sprintf("%s/v1.0/state/%s", c.BaseURL, store)
 	return c.post(url, list)
 }
 
-// SaveData saves data into state store for specific key
-func (c *Client) SaveData(store, key string, data interface{}) error {
+// SaveState saves data into state store for specific key
+func (c *Client) SaveState(store, key string, data interface{}) error {
 	state := &StateData{
 		Key:   key,
 		Value: data,
@@ -130,8 +130,7 @@ func (c *Client) SaveData(store, key string, data interface{}) error {
 			"created_on": time.Now().UTC().String(),
 		},
 	}
-
-	return c.Save(store, state)
+	return c.SaveStateData(store, state)
 }
 
 // Publish serializes data to JSON and publishes it onto specified topic
@@ -140,14 +139,14 @@ func (c *Client) Publish(topic string, data interface{}) error {
 	return c.post(url, data)
 }
 
-// Send serializes data to JSON and submits to specific binding
-func (c *Client) Send(binding string, data interface{}) error {
+// Bind serializes data to JSON and submits to specific binding
+func (c *Client) Bind(binding string, data interface{}) error {
 	url := fmt.Sprintf("%s/v1.0/bindings/%s", c.BaseURL, binding)
 	return c.post(url, data)
 }
 
-// Invoke serializes input data to JSON and invokes the remote service method
-func (c *Client) Invoke(service, method string, in interface{}) (out []byte, err error) {
+// InvokeService serializes input data to JSON and invokes the remote service method
+func (c *Client) InvokeService(service, method string, in interface{}) (out []byte, err error) {
 	url := fmt.Sprintf("%s/v1.0/invoke/%s/method/%s", c.BaseURL, service, method)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
