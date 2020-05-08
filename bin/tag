@@ -3,7 +3,7 @@
 set -o errexit
 set -o pipefail
 
-export RELEASE_VERSION="v0.5.2"
+export RELEASE_VERSION="v0.5.3"
 
 go mod tidy
 go mod vendor

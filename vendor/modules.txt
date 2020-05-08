@@ -2,10 +2,6 @@
 github.com/davecgh/go-spew/spew
 # github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6
 github.com/golang/groupcache/lru
-# github.com/opentracing/opentracing-go v1.1.0
-## explicit
-github.com/opentracing/opentracing-go
-github.com/opentracing/opentracing-go/log
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
