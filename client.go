@@ -12,8 +12,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
 )
 
 var (
@@ -64,12 +65,10 @@ type Client struct {
 // GetStateWithOptions gets content for specific key in state store
 // TODO: implement with StateOptions
 func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt *StateOptions) (data []byte, err error) {
-	traceCtx, span := trace.StartSpan(ctx, "save-state")
-	defer span.End()
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("store", store),
-		trace.StringAttribute("key", key),
-	}, "save-state")
+	span := opentracing.SpanFromContext(ctx)
+	defer span.Finish()
+	span.SetTag("state-store", store)
+	span.SetTag("state-key", key)
 	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.BaseURL, store, key)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -84,9 +83,13 @@ func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt
 		req.Header.Set("consistency", opt.Consistency)
 	}
 
-	req = req.WithContext(traceCtx)
+	opentracing.GlobalTracer().Inject(
+		span.Context(),
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(req.Header))
 	resp, err := c.newHTTPClient().Do(req)
 	if err != nil {
+		span.SetTag("error", string(ext.Error))
 		return nil, errors.Wrapf(err, "error quering state service: %s", url)
 	}
 	defer resp.Body.Close()
@@ -101,19 +104,13 @@ func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("invalid response code: %d", resp.StatusCode),
-		})
+		span.SetTag("error", string(ext.Error))
 		return nil, fmt.Errorf("invalid response code from GET to %s: %d", url, resp.StatusCode)
 	}
 
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("error reading response from GET to %s", url),
-		})
+		span.SetTag("error", string(ext.Error))
 		return nil, errors.Wrapf(err, "error reading response from GET to %s", url)
 	}
 
@@ -163,41 +160,33 @@ func (c *Client) InvokeBinding(ctx context.Context, binding string, data interfa
 
 // InvokeService serializes input data to JSON and invokes the remote service method
 func (c *Client) InvokeService(ctx context.Context, service, method string, in interface{}) (out []byte, err error) {
-	traceCtx, span := trace.StartSpan(ctx, "invoke-service")
-	defer span.End()
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("service", service),
-		trace.StringAttribute("method", method),
-	}, "invoke-service")
+	span := opentracing.SpanFromContext(ctx)
+	defer span.Finish()
+	span.SetTag("invoke-service", service)
+	span.SetTag("invoke-method", method)
 	url := fmt.Sprintf("%s/v1.0/invoke/%s/method/%s", c.BaseURL, service, method)
 	b, _ := json.Marshal(in)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(traceCtx)
+	opentracing.GlobalTracer().Inject(
+		span.Context(),
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(req.Header))
 	resp, err := c.newHTTPClient().Do(req)
 	if err != nil {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("error invoking service: %s", url),
-		})
+		span.SetTag("error", string(ext.Error))
 		return nil, errors.Wrapf(err, "error invoking service: %s", url)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("invalid response code from GET to %s: %d", url, resp.StatusCode),
-		})
+		span.SetTag("error", string(ext.Error))
 		return nil, fmt.Errorf("invalid response code from GET to %s: %d", url, resp.StatusCode)
 	}
 
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("error reading response from invoke to %s", url),
-		})
+		span.SetTag("error", string(ext.Error))
 		return nil, errors.Wrapf(err, "error reading response from invoke to %s", url)
 	}
 
@@ -205,21 +194,19 @@ func (c *Client) InvokeService(ctx context.Context, service, method string, in i
 }
 
 func (c *Client) post(ctx context.Context, method, url string, data interface{}) error {
-	traceCtx, span := trace.StartSpan(ctx, method)
-	defer span.End()
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("url", url),
-	}, method)
+	span := opentracing.SpanFromContext(ctx)
+	defer span.Finish()
+
 	b, _ := json.Marshal(data)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(traceCtx)
+	opentracing.GlobalTracer().Inject(
+		span.Context(),
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(req.Header))
 	resp, err := c.newHTTPClient().Do(req)
 	if err != nil {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("error posting %+v to %s", data, url),
-		})
+		span.SetTag("error", string(ext.Error))
 		return errors.Wrapf(err, "error posting %+v to %s", data, url)
 	}
 	defer resp.Body.Close()
@@ -228,11 +215,7 @@ func (c *Client) post(ctx context.Context, method, url string, data interface{})
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		dump, _ := httputil.DumpResponse(resp, true)
-		span.SetStatus(trace.Status{
-			Code: trace.StatusCodeUnknown,
-			Message: fmt.Sprintf("invalid response code from POST to %s with result: %+v - %q",
-				url, data, dump),
-		})
+		span.SetTag("error", string(ext.Error))
 		return fmt.Errorf("invalid response code from POST to %s with result: %+v - %q",
 			url, data, dump)
 	}
