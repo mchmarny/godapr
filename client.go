@@ -130,7 +130,7 @@ func (c *Client) GetState(ctx context.Context, store, key string) (data []byte, 
 func (c *Client) SaveStateData(ctx context.Context, store string, data *StateData) error {
 	list := []*StateData{data}
 	url := fmt.Sprintf("%s/v1.0/state/%s", c.BaseURL, store)
-	return c.post(ctx, "save-state" url, list)
+	return c.post(ctx, "save-state", url, list)
 }
 
 // SaveState saves data into state store for specific key
