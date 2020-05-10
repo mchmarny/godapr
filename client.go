@@ -62,7 +62,6 @@ type Client struct {
 }
 
 // GetStateWithOptions gets content for specific key in state store
-// TODO: implement with StateOptions
 func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt *StateOptions) (data []byte, err error) {
 	ctx, span := trace.StartSpan(ctx, "get-state")
 	defer span.End()
@@ -143,6 +142,66 @@ func (c *Client) SaveState(ctx context.Context, store, key string, data interfac
 	return c.SaveStateData(ctx, store, state)
 }
 
+// DeleteState deletes existing state from specified store
+func (c *Client) DeleteState(ctx context.Context, store, key string) error {
+	opt := &StateOptions{
+		Consistency: "strong",     // override default consistency (eventual)
+		Concurrency: "last-write", // override defaults (first-write)
+	}
+	return c.DeleteStateWithOptions(ctx, store, key, opt)
+}
+
+// DeleteStateWithOptions deletes existing state from specified store
+func (c *Client) DeleteStateWithOptions(ctx context.Context, store, key string, opt *StateOptions) error {
+	ctx, span := trace.StartSpan(ctx, "delete-state")
+	defer span.End()
+
+	if opt == nil {
+		return errors.New("nil state options")
+	}
+
+	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.BaseURL, store, key)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("consistency", DefaultConsistency)
+	req.Header.Set("concurrency", DefaultConcurrency)
+	req = req.WithContext(ctx)
+
+	if opt != nil && opt.Concurrency != "" {
+		req.Header.Set("concurrency", opt.Concurrency)
+	}
+
+	if opt != nil && opt.Consistency != "" {
+		req.Header.Set("consistency", opt.Consistency)
+	}
+
+	resp, err := c.newHTTPClient().Do(req)
+	if err != nil {
+		return errors.Wrapf(err, "error quering state service: %s", url)
+	}
+	defer resp.Body.Close()
+
+	logger.Printf("%s GET: %d (%s)", url, resp.StatusCode, http.StatusText(resp.StatusCode))
+
+	// on initial run there won't be any state
+	if resp.StatusCode == http.StatusNoContent ||
+		resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("invalid response code from GET to %s: %d", url, resp.StatusCode)
+	}
+
+	span.Annotate([]trace.Attribute{
+		trace.StringAttribute("store", store),
+		trace.StringAttribute("key", key),
+	}, "Deleted state")
+
+	return nil
+
+}
+
 // Publish serializes data to JSON and publishes it onto specified topic
 func (c *Client) Publish(ctx context.Context, topic string, data interface{}) error {
 	url := fmt.Sprintf("%s/v1.0/publish/%s", c.BaseURL, topic)
@@ -155,14 +214,13 @@ func (c *Client) InvokeBinding(ctx context.Context, binding string, data interfa
 	return c.post(ctx, "invoke-service", url, data)
 }
 
-// InvokeService serializes input data to JSON and invokes the remote service method
-func (c *Client) InvokeService(ctx context.Context, service, method string, in interface{}) (out []byte, err error) {
+// InvokeServiceWithData  invokes the remote service method
+func (c *Client) InvokeServiceWithData(ctx context.Context, service, method string, in []byte) (out []byte, err error) {
 	ctx, span := trace.StartSpan(ctx, "invoke-service")
 	defer span.End()
 
 	url := fmt.Sprintf("%s/v1.0/invoke/%s/method/%s", c.BaseURL, service, method)
-	b, _ := json.Marshal(in)
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(in))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 
@@ -187,6 +245,12 @@ func (c *Client) InvokeService(ctx context.Context, service, method string, in i
 	}, "Invoked service")
 
 	return content, nil
+}
+
+// InvokeService serializes input data to JSON and invokes the remote service method
+func (c *Client) InvokeService(ctx context.Context, service, method string, in interface{}) (out []byte, err error) {
+	b, _ := json.Marshal(in)
+	return c.InvokeServiceWithData(ctx, service, method, b)
 }
 
 func (c *Client) post(ctx context.Context, method, url string, data interface{}) error {

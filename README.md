@@ -41,7 +41,7 @@ client := dapr.NewClientWithURL("http://localhost:3500")
 To get state data you can either use the client defaults ("strong" Consistency, "last-write" Concurrency)
 
 ```go
-data, err := client.GetData("store-name", "record-key")
+data, err := client.GetData(ctx, "store-name", "record-key")
 ```
 
 Or define your own state options
@@ -52,7 +52,7 @@ opt := &StateOptions{
     Concurrency: "first-write",
 }
 
-data, err := client.GetDataWithOptions("store-name", "record-key", opt)
+data, err := client.GetDataWithOptions(ctx, "store-name", "record-key", opt)
 ```
 
 #### Save Data
@@ -69,7 +69,7 @@ person := &Person{
 you can either use the defaults
 
 ```go
-err := client.SaveData("store-name", "record-key", person)
+err := client.SaveData(ctx, "store-name", "record-key", person)
 ```
 
 Or define your own state data object
@@ -84,7 +84,7 @@ data := &StateData{
     },
 }
 
-err := client.Save("store-name", data)
+err := client.SaveStateData(ctx, "store-name", data)
 ```
 
 ### Events
@@ -92,15 +92,30 @@ err := client.Save("store-name", data)
 To publish events to a topic you can just
 
 ```go
-err := client.Publish("topic-name", person)
+err := client.Publish(ctx, "topic-name", person)
 ```
 
 ### Binding
 
-Similarly with binding you can use the `Send` method
+Similarly with binding you can use the `InvokeBinding` method
 
 ```go
-err := client.Send("binding-name", person)
+err := client.InvokeBinding(ctx, "binding-name", person)
+```
+
+### Service Invocation 
+
+Finally, for service, you can either 
+
+```go
+out, err := client.InvokeService(ctx, "service-name", "method-name", person)
+```
+
+Or serialize the person yourself and 
+
+```go
+content, _ := json.Marshal(data)
+out, err := client.InvokeServiceWithData(ctx, "service-name", "method-name", content)
 ```
 
 
