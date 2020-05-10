@@ -11,7 +11,7 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// PublishWithData invokes to specific binding
+// PublishWithData invokes to specific topic with the passed in content
 func (c *Client) PublishWithData(ctx context.Context, topic string, in []byte) error {
 	ctx, span := trace.StartSpan(ctx, "publish")
 	defer span.End()

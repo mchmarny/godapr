@@ -56,7 +56,7 @@ func NewClientWithURL(url string) (client *Client) {
 	}
 }
 
-// Client is a simple HTTP client
+// Client is a simple HTTP Dapr client abstraction
 type Client struct {
 	url     string
 	timeout time.Duration

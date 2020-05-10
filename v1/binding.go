@@ -11,7 +11,7 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// InvokeBindingWithData invokes to specific binding
+// InvokeBindingWithData posts the in content to specified binding
 func (c *Client) InvokeBindingWithData(ctx context.Context, binding string, in []byte) (out []byte, err error) {
 	ctx, span := trace.StartSpan(ctx, "invoke-binding")
 	defer span.End()
