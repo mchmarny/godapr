@@ -7,7 +7,7 @@ Dapr has gRPC and REST APIs. For `go`, there is the auto-generated [gRPC SDK](ht
 To use `godapr` first get the library
 
 ```shell
-go get github.com/mchmarny/godapr
+go get github.com/mchmarny/godapr/v1
 ```
 
 ### Create Client
@@ -15,7 +15,7 @@ go get github.com/mchmarny/godapr
 To use `godapr` library in your code, first import it
 
 ```go
-import dapr "github.com/mchmarny/godapr"
+import dapr "github.com/mchmarny/godapr/v1"
 ```
 
 Then create a `godapr` client with the `dapr` server defaults
