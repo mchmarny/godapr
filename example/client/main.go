@@ -64,11 +64,11 @@ func main() {
 	if err := json.Unmarshal(resp, &msgOut); err != nil {
 		panic(err)
 	}
-	fmt.Printf("Request: ping, Response: %s\n", msgOut.Response)
+	fmt.Printf("send: ping, got: %s\n", msgOut.Response)
 
 	// invoke output binding named 'example-http-binding'
 	// uses https://http2.pro/doc/api to check for HTTP/2
-	err = client.InvokeBinding(ctx, "example-http-binding", data)
+	_, err = client.InvokeBinding(ctx, "example-http-binding", data)
 	if err != nil {
 		panic(err)
 	}
