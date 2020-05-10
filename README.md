@@ -1,8 +1,6 @@
 # godapr (simple dapr HTTP client)
 
-dapr has gRPC and REST APIs. For `go`, there is the auto-generated [gRPC SDK](https://github.com/dapr/go-sdk) that covers the complete spectrum of dapr API. Developers can also implement their own HTTP calls to the REST API. When invoking the dapr REST APIs there usually is lot's of redundant code builting request and aprsing response. I create this simple HTTP api to constraint the dapr API to one library.
-
-> Warning, this library implements only the most common parts of dapr API (state, pubsub, and binding). 
+Dapr has gRPC and REST APIs. For `go`, there is the auto-generated [gRPC SDK](https://github.com/dapr/go-sdk) that covers the complete spectrum of dapr API. Developers can also implement their own HTTP calls to the REST API. When invoking the dapr REST APIs there usually is lot's of redundant code building request and parsing responses, so I create this simple Dapr client to simplify Dapr integrations and minimize code duplication.
 
 ## Usage
 
@@ -41,7 +39,7 @@ client := dapr.NewClientWithURL("http://localhost:3500")
 To get state data you can either use the client defaults ("strong" Consistency, "last-write" Concurrency)
 
 ```go
-data, err := client.GetData(ctx, "store-name", "record-key")
+data, err := client.GetState(ctx, "store-name", "record-key")
 ```
 
 Or define your own state options
@@ -52,7 +50,7 @@ opt := &StateOptions{
     Concurrency: "first-write",
 }
 
-data, err := client.GetDataWithOptions(ctx, "store-name", "record-key", opt)
+data, err := client.GetStateWithOptions(ctx, "store-name", "record-key", opt)
 ```
 
 #### Save Data
@@ -69,7 +67,7 @@ person := &Person{
 you can either use the defaults
 
 ```go
-err := client.SaveData(ctx, "store-name", "record-key", person)
+err := client.SaveState(ctx, "store-name", "record-key", person)
 ```
 
 Or define your own state data object
@@ -84,23 +82,59 @@ data := &StateData{
     },
 }
 
-err := client.SaveStateData(ctx, "store-name", data)
+err := client.SaveStateWithData(ctx, "store-name", data)
+```
+
+#### Delete Data 
+
+
+Similarly with deleting ata... you can either use the defaults
+
+
+```go
+err := client.DeleteState(ctx, "store-name", "record-key")
+```
+
+Or define your own state data object
+
+```go
+opt := &StateOptions{
+    Consistency: "eventual",
+    Concurrency: "first-write",
+}
+
+err := client.DeleteStateWithOptions(ctx, "store-name", opt)
 ```
 
 ### Events
 
-To publish events to a topic you can just
+To publish events to a topic you can pass instance of your own struct
 
 ```go
 err := client.Publish(ctx, "topic-name", person)
 ```
 
+Or send the raw content in bytes 
+
+```go
+data := []byte("hi")
+err := client.PublishWithData(ctx, "topic-name", data)
+```
+
+
 ### Binding
 
-Similarly with binding you can use the `InvokeBinding` method
+Similarly with binding you can use the default method to send instance of your own struct
 
 ```go
 err := client.InvokeBinding(ctx, "binding-name", person)
+```
+
+Or send the raw content in bytes 
+
+```go
+data := []byte("hi")
+err := client.InvokeBindingWithData(ctx, "topic-name", data)
 ```
 
 ### Service Invocation 
@@ -117,6 +151,7 @@ Or serialize the person yourself and
 content, _ := json.Marshal(data)
 out, err := client.InvokeServiceWithData(ctx, "service-name", "method-name", content)
 ```
+
 
 
 ## Disclaimer
