@@ -19,17 +19,16 @@ func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt
 
 	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.url, store, key)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("consistency", DefaultConsistency)
 	req.Header.Set("concurrency", DefaultConcurrency)
-	req = req.WithContext(ctx)
 
-	if opt != nil && opt.Concurrency != "" {
-		req.Header.Set("concurrency", opt.Concurrency)
-	}
-
-	if opt != nil && opt.Consistency != "" {
-		req.Header.Set("consistency", opt.Consistency)
+	if opt != nil {
+		if opt.Concurrency != "" {
+			req.Header.Set("concurrency", opt.Concurrency)
+		}
+		if opt.Consistency != "" {
+			req.Header.Set("consistency", opt.Consistency)
+		}
 	}
 
 	content, status, err := c.exec(ctx, req)
@@ -118,10 +117,8 @@ func (c *Client) DeleteStateWithOptions(ctx context.Context, store, key string, 
 
 	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.url, store, key)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("consistency", DefaultConsistency)
 	req.Header.Set("concurrency", DefaultConcurrency)
-	req = req.WithContext(ctx)
 
 	if opt != nil && opt.Concurrency != "" {
 		req.Header.Set("concurrency", opt.Concurrency)
