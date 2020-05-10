@@ -6,7 +6,6 @@ spec:
   type: bindings.http
   metadata:
   - name: url
-    value: https://http2.pro/api/v1
+    value: http://localhost:8080/bind
   - name: method
-    value: GET
-
+    value: POST

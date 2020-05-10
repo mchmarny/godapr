@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dapr "github.com/mchmarny/godapr"
+	dapr "github.com/mchmarny/godapr/v1"
 )
 
 func main() {
