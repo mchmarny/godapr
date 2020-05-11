@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,10 +12,7 @@ import (
 )
 
 // GetStateWithOptions gets content for specific key in state store
-func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt *StateOptions) (data []byte, err error) {
-	ctx, span := trace.StartSpan(ctx, "get-state")
-	defer span.End()
-
+func (c *Client) GetStateWithOptions(ctx trace.SpanContext, store, key string, opt *StateOptions) (data []byte, err error) {
 	url := fmt.Sprintf("%s/v1.0/state/%s/%s", c.url, store, key)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("consistency", DefaultConsistency)
@@ -45,25 +41,16 @@ func (c *Client) GetStateWithOptions(ctx context.Context, store, key string, opt
 		return nil, fmt.Errorf("invalid response code from GET to %s: %d", url, status)
 	}
 
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("store", store),
-		trace.StringAttribute("key", key),
-	}, "Got state")
-
 	return content, nil
-
 }
 
 // GetState gets content for specific key in state store
-func (c *Client) GetState(ctx context.Context, store, key string) (data []byte, err error) {
+func (c *Client) GetState(ctx trace.SpanContext, store, key string) (data []byte, err error) {
 	return c.GetStateWithOptions(ctx, store, key, nil)
 }
 
 // SaveStateWithData saves state data into state store
-func (c *Client) SaveStateWithData(ctx context.Context, store string, data *StateData) error {
-	ctx, span := trace.StartSpan(ctx, "save-state")
-	defer span.End()
-
+func (c *Client) SaveStateWithData(ctx trace.SpanContext, store string, data *StateData) error {
 	list := []*StateData{data}
 	url := fmt.Sprintf("%s/v1.0/state/%s", c.url, store)
 	b, _ := json.Marshal(list)
@@ -82,7 +69,7 @@ func (c *Client) SaveStateWithData(ctx context.Context, store string, data *Stat
 }
 
 // SaveState saves data into state store for specific key
-func (c *Client) SaveState(ctx context.Context, store, key string, data interface{}) error {
+func (c *Client) SaveState(ctx trace.SpanContext, store, key string, data interface{}) error {
 	state := &StateData{
 		Key:   key,
 		Value: data,
@@ -98,7 +85,7 @@ func (c *Client) SaveState(ctx context.Context, store, key string, data interfac
 }
 
 // DeleteState deletes existing state from specified store
-func (c *Client) DeleteState(ctx context.Context, store, key string) error {
+func (c *Client) DeleteState(ctx trace.SpanContext, store, key string) error {
 	opt := &StateOptions{
 		Consistency: "strong",     // override default consistency (eventual)
 		Concurrency: "last-write", // override defaults (first-write)
@@ -107,10 +94,7 @@ func (c *Client) DeleteState(ctx context.Context, store, key string) error {
 }
 
 // DeleteStateWithOptions deletes existing state from specified store
-func (c *Client) DeleteStateWithOptions(ctx context.Context, store, key string, opt *StateOptions) error {
-	ctx, span := trace.StartSpan(ctx, "delete-state")
-	defer span.End()
-
+func (c *Client) DeleteStateWithOptions(ctx trace.SpanContext, store, key string, opt *StateOptions) error {
 	if opt == nil {
 		return errors.New("nil state options")
 	}
@@ -142,11 +126,5 @@ func (c *Client) DeleteStateWithOptions(ctx context.Context, store, key string, 
 		return fmt.Errorf("invalid response code from GET to %s: %d", url, status)
 	}
 
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("store", store),
-		trace.StringAttribute("key", key),
-	}, "Deleted state")
-
 	return nil
-
 }

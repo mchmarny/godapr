@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,10 +11,7 @@ import (
 )
 
 // PublishWithData invokes to specific topic with the passed in content
-func (c *Client) PublishWithData(ctx context.Context, topic string, in []byte) error {
-	ctx, span := trace.StartSpan(ctx, "publish")
-	defer span.End()
-
+func (c *Client) PublishWithData(ctx trace.SpanContext, topic string, in []byte) error {
 	url := fmt.Sprintf("%s/v1.0/publish/%s", c.url, topic)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(in))
 	if err != nil {
@@ -31,15 +27,11 @@ func (c *Client) PublishWithData(ctx context.Context, topic string, in []byte) e
 		return fmt.Errorf("invalid response code to %s: %d", url, status)
 	}
 
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("topic", topic),
-	}, "Published to topic")
-
 	return nil
 }
 
 // Publish serializes data to JSON and invokes PublishWithData
-func (c *Client) Publish(ctx context.Context, topic string, data interface{}) error {
+func (c *Client) Publish(ctx trace.SpanContext, topic string, data interface{}) error {
 	b, _ := json.Marshal(data)
 	return c.PublishWithData(ctx, topic, b)
 }

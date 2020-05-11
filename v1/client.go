@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +9,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
+	"go.opencensus.io/trace"
 )
 
 var (
@@ -62,22 +64,23 @@ type Client struct {
 	timeout time.Duration
 }
 
-func (c *Client) newHTTPClient() *http.Client {
-	return &http.Client{
-		Timeout: c.timeout,
-	}
-}
-
-func (c *Client) exec(ctx context.Context, req *http.Request) (out []byte, status int, err error) {
+func (c *Client) exec(ctx trace.SpanContext, req *http.Request) (out []byte, status int, err error) {
 	if req == nil {
 		err = errors.New("nil request")
 		return
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(ctx)
+	client := &http.Client{
+		Timeout:   c.timeout,
+		Transport: &ochttp.Transport{},
+	}
 
-	resp, err := c.newHTTPClient().Do(req)
+	httpFmt := tracecontext.HTTPFormat{}
+	httpFmt.SpanContextToRequest(ctx, req)
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		err = errors.Wrapf(err, "error executing %+v", req)
 		return

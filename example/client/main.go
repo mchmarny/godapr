@@ -1,16 +1,16 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	dapr "github.com/mchmarny/godapr/v1"
+	"go.opencensus.io/trace"
 )
 
 func main() {
 	// just for this demo
-	ctx := context.Background()
+	ctx := trace.SpanContext{}
 	data := &Person{
 		Name: "Test Person",
 		Age:  40,

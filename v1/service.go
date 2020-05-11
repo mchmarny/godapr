@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,10 +11,7 @@ import (
 )
 
 // InvokeServiceWithData invokes the remote service method
-func (c *Client) InvokeServiceWithData(ctx context.Context, service, method string, in []byte) (out []byte, err error) {
-	ctx, span := trace.StartSpan(ctx, "invoke-service")
-	defer span.End()
-
+func (c *Client) InvokeServiceWithData(ctx trace.SpanContext, service, method string, in []byte) (out []byte, err error) {
 	url := fmt.Sprintf("%s/v1.0/invoke/%s/method/%s", c.url, service, method)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(in))
 	if err != nil {
@@ -33,16 +29,11 @@ func (c *Client) InvokeServiceWithData(ctx context.Context, service, method stri
 		return nil, fmt.Errorf("invalid response code to %s: %d", url, status)
 	}
 
-	span.Annotate([]trace.Attribute{
-		trace.StringAttribute("service", service),
-		trace.StringAttribute("method", method),
-	}, "Invoked service")
-
 	return content, nil
 }
 
 // InvokeService serializes input data to JSON and invokes InvokeServiceWithData
-func (c *Client) InvokeService(ctx context.Context, service, method string, in interface{}) (out []byte, err error) {
+func (c *Client) InvokeService(ctx trace.SpanContext, service, method string, in interface{}) (out []byte, err error) {
 	b, _ := json.Marshal(in)
 	return c.InvokeServiceWithData(ctx, service, method, b)
 }
