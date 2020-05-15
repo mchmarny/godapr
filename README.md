@@ -2,6 +2,8 @@
 
 Dapr has gRPC and REST APIs. For `go`, there is the auto-generated [gRPC SDK](https://github.com/dapr/go-sdk) that covers the complete spectrum of dapr API. Developers can also implement their own HTTP calls to the REST API. When invoking the dapr REST APIs there usually is lot's of redundant code building request and parsing responses, so I create this simple Dapr client to simplify Dapr integrations and minimize code duplication.
 
+> Note, I submitted a [PR](https://github.com/dapr/go-sdk/pull/18) with similar enhancments to the [go-sdk](https://github.com/dapr/go-sdk) already submitted [#18](https://github.com/dapr/go-sdk/pull/18)
+
 ## Usage
 
 To use `godapr` first get the library
