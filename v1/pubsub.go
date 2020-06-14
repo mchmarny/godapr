@@ -12,6 +12,13 @@ import (
 
 // PublishWithData invokes to specific topic with the passed in content
 func (c *Client) PublishWithData(ctx trace.SpanContext, topic string, in []byte) error {
+	if topic == "" {
+		return errors.New("nil topic")
+	}
+	if in == nil {
+		return errors.New("nil in content")
+	}
+
 	url := fmt.Sprintf("%s/v1.0/publish/%s", c.url, topic)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(in))
 	if err != nil {
@@ -31,7 +38,10 @@ func (c *Client) PublishWithData(ctx trace.SpanContext, topic string, in []byte)
 }
 
 // Publish serializes data to JSON and invokes PublishWithData
-func (c *Client) Publish(ctx trace.SpanContext, topic string, data interface{}) error {
-	b, _ := json.Marshal(data)
+func (c *Client) Publish(ctx trace.SpanContext, topic string, in interface{}) error {
+	b, err := json.Marshal(in)
+	if err != nil {
+		return errors.Wrapf(err, "error serializing identity: %v", in)
+	}
 	return c.PublishWithData(ctx, topic, b)
 }

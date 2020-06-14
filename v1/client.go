@@ -34,6 +34,12 @@ var (
 
 	// DefaultRetryPolicyPattern is the state store retry policy pattern setting
 	DefaultRetryPolicyPattern = "exponential"
+
+	// DefaultStateOptions is made of DefaultConsistency and DefaultConcurrency
+	DefaultStateOptions = &StateOptions{
+		Concurrency: DefaultConcurrency,
+		Consistency: DefaultConsistency,
+	}
 )
 
 // NewClient creates instance of dapr Client using http://localhost:PORT
@@ -64,7 +70,7 @@ type Client struct {
 	timeout time.Duration
 }
 
-// Health checks the Dapr client connection status and Dapr API health
+// Health checks the Dapr client connection status and Dapr API
 func (c *Client) Health() (ok bool, err error) {
 	url := fmt.Sprintf("%s/v1.0/healthz", c.url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -112,6 +118,5 @@ func (c *Client) exec(ctx trace.SpanContext, req *http.Request) (out []byte, sta
 		return
 	}
 	out = content
-
 	return
 }

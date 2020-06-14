@@ -12,6 +12,12 @@ import (
 
 // InvokeBindingWithData posts the in content to specified binding
 func (c *Client) InvokeBindingWithData(ctx trace.SpanContext, binding string, data *BindingData) (out []byte, err error) {
+	if binding == "" {
+		return nil, errors.New("nil binding")
+	}
+	if data == nil {
+		return nil, errors.New("nil input data")
+	}
 	url := fmt.Sprintf("%s/v1.0/bindings/%s", c.url, binding)
 
 	b, _ := json.Marshal(data)
@@ -35,10 +41,17 @@ func (c *Client) InvokeBindingWithData(ctx trace.SpanContext, binding string, da
 	return content, nil
 }
 
-// InvokeBinding serializes data and invokes InvokeBindingWithData
-func (c *Client) InvokeBinding(ctx trace.SpanContext, binding, operation string, in interface{}) (out []byte, err error) {
+// InvokeBindingWithIdentity invokes InvokeBindingWithData with operation and data
+func (c *Client) InvokeBindingWithIdentity(ctx trace.SpanContext, binding, operation string, in interface{}) (out []byte, err error) {
 	return c.InvokeBindingWithData(ctx, binding, &BindingData{
 		Data:      in,
+		Operation: operation,
+	})
+}
+
+// InvokeBinding invokes InvokeBindingWithData with just the operation
+func (c *Client) InvokeBinding(ctx trace.SpanContext, binding, operation string) (out []byte, err error) {
+	return c.InvokeBindingWithData(ctx, binding, &BindingData{
 		Operation: operation,
 	})
 }

@@ -129,14 +129,14 @@ err := client.PublishWithData(ctx, "topic-name", data)
 Similarly with binding you can use the default method to send instance of your own struct
 
 ```go
-err := client.InvokeBinding(ctx, "binding-name", person)
+err := client.InvokeBinding(ctx, "binding-name", "create", person)
 ```
 
 Or send the raw content in bytes 
 
 ```go
 data := []byte("hi")
-err := client.InvokeBindingWithData(ctx, "topic-name", data)
+err := client.InvokeBindingWithData(ctx, "binding-name", "create", data)
 ```
 
 ### Service Invocation 

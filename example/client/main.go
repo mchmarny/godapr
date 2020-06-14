@@ -56,7 +56,7 @@ func main() {
 
 	// invoke a method called MyMethod on another dapr enabled service with id client
 	msgIn := &EchoMessage{Request: "ping"}
-	resp, err := client.InvokeService(ctx, "example-service", "echo", msgIn)
+	resp, err := client.InvokeServiceWithIdentity(ctx, "example-service", "echo", msgIn)
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +67,7 @@ func main() {
 	fmt.Printf("send: ping, got: %s\n", msgOut.Response)
 
 	// invoke output binding named 'example-http-binding'
-	_, err = client.InvokeBinding(ctx, "example-http-binding", "create", data)
+	_, err = client.InvokeBinding(ctx, "example-http-binding", "create")
 	if err != nil {
 		panic(err)
 	}
