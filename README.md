@@ -34,7 +34,6 @@ client := dapr.NewClientWithURL("http://localhost:3500")
 
 ### State
 
-
 #### Save Data
 
 To save state using the the "reasonable" defaults:
@@ -84,6 +83,8 @@ opt := &StateOptions{
 data, err := client.GetStateWithOptions(ctx, "store-name", "record-key", opt)
 ```
 
+`data` contains the `[]byte` content retrieved from the state store
+
 #### Delete Data 
 
 Similarly with deleting, you can either use the defaults
@@ -129,7 +130,7 @@ out, err := client.InvokeBinding(ctx, "binding-name", "create")
 Or, with an instance of your own struct
 
 ```go
-err := client.InvokeBindingWithIdentity(ctx, "binding-name", "create", person)
+out, err := client.InvokeBindingWithIdentity(ctx, "binding-name", "create", person)
 ```
 
 Or, for more control, with an instance of the `BindingData`
@@ -141,8 +142,10 @@ data := &BindingData{
     Operation: "create",
     Metadata:  map[string]string{ "k1":"v1", "k2": "v2" },
 }
-err := client.InvokeBindingWithData(ctx, "binding-name", "create", data)
+out, err := client.InvokeBindingWithData(ctx, "binding-name", "create", data)
 ```
+
+`out` contains the `[]byte` content returned by the binding 
 
 ### Service Invocation 
 
@@ -156,7 +159,7 @@ out, err := client.InvokeService(ctx, "service-name", "method-name")
 Or, with an instance of your own struct
 
 ```go
-err := client.InvokeServiceWithIdentity(ctx, "service-name", "method-name", person)
+out, err := client.InvokeServiceWithIdentity(ctx, "service-name", "method-name", person)
 ```
 
 Or, invoke it directly with your own content 
@@ -164,8 +167,10 @@ Or, invoke it directly with your own content
 
 ```go
 data := []byte("your content")
-err := client.InvokeServiceWithData(ctx, "binding-name", "create", data)
+out, err := client.InvokeServiceWithData(ctx, "binding-name", "create", data)
 ```
+
+`out` contains the `[]byte` content returned by the service 
 
 ## Disclaimer
 
