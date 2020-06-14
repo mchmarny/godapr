@@ -1,8 +1,8 @@
 # godapr (simple dapr HTTP client)
 
-Dapr has gRPC and REST APIs. For `go`, there is the auto-generated [gRPC SDK](https://github.com/dapr/go-sdk) that covers the complete spectrum of dapr API. Developers can also implement their own HTTP calls to the REST API. When invoking the dapr REST APIs there usually is lot's of redundant code building request and parsing responses, so I create this simple Dapr client to simplify Dapr integrations and minimize code duplication.
+Dapr has gRPC and REST APIs. For `go`, there is an auto-generated [gRPC SDK](https://github.com/dapr/go-sdk) and the developers can also implement their own HTTP calls to the REST API. When invoking the dapr REST APIs there usually is lot's of redundant code building request, parsing responses, and dealing with traces. I create this client to simplify Dapr integrations and minimize code duplication.
 
-> Note, I submitted a [PR](https://github.com/dapr/go-sdk/pull/18) with similar enhancments to the [go-sdk](https://github.com/dapr/go-sdk) already submitted [#18](https://github.com/dapr/go-sdk/pull/18)
+> Note, I submitted a [PR](https://github.com/dapr/go-sdk/pull/18) with similar enhancements to the [go-sdk](https://github.com/dapr/go-sdk) already submitted [#18](https://github.com/dapr/go-sdk/pull/18)
 
 ## Usage
 
@@ -32,47 +32,26 @@ or if you need to specify non-default dapr port
 client := dapr.NewClientWithURL("http://localhost:3500")
 ```
 
-> consider getting the dapr server URL from environment variable
-
 ### State
 
-#### Get Data
-
-To get state data you can either use the client defaults ("strong" Consistency, "last-write" Concurrency)
-
-```go
-data, err := client.GetState(ctx, "store-name", "record-key")
-```
-
-Or define your own state options
-
-```go
-opt := &StateOptions{
-    Consistency: "eventual",
-    Concurrency: "first-write",
-}
-
-data, err := client.GetStateWithOptions(ctx, "store-name", "record-key", opt)
-```
 
 #### Save Data
 
-Similarly with saving state, assuming you have your own person object for example
+To save state using the the "reasonable" defaults:
 
 ```go
-person := &Person{
-    Name: "Example John",
-    Age: 35,
-}
+state := "my data"
+err := client.SaveState(ctx, "store-name", "id-123", state)
 ```
 
-you can either use the defaults
+You can also persist objects
 
 ```go
-err := client.SaveState(ctx, "store-name", "record-key", person)
+person := &Person{ Name: "Example John", Age: 35 }
+err := client.SaveState(ctx, "store-name", "id-123", person)
 ```
 
-Or define your own state data object
+For more control, you can also create the `StateData` object
 
 ```go
 data := &StateData{
@@ -83,15 +62,31 @@ data := &StateData{
         Concurrency: "first-write",
     },
 }
-
 err := client.SaveStateWithData(ctx, "store-name", data)
+```
+
+#### Get Data
+
+To get state data you can either use the client defaults ("strong" Consistency, "last-write" Concurrency)
+
+```go
+data, err := client.GetState(ctx, "store-name", "record-key")
+```
+
+Or, for more control, define your own state options
+
+```go
+opt := &StateOptions{
+    Consistency: "eventual",
+    Concurrency: "first-write",
+}
+
+data, err := client.GetStateWithOptions(ctx, "store-name", "record-key", opt)
 ```
 
 #### Delete Data 
 
-
-Similarly with deleting ata... you can either use the defaults
-
+Similarly with deleting, you can either use the defaults
 
 ```go
 err := client.DeleteState(ctx, "store-name", "record-key")
@@ -123,38 +118,54 @@ data := []byte("hi")
 err := client.PublishWithData(ctx, "topic-name", data)
 ```
 
-
 ### Binding
 
-Similarly with binding you can use the default method to send instance of your own struct
+Similarly with binding, you can invoke binding without any data
 
 ```go
-err := client.InvokeBinding(ctx, "binding-name", "create", person)
+out, err := client.InvokeBinding(ctx, "binding-name", "create")
 ```
 
-Or send the raw content in bytes 
+Or, with an instance of your own struct
 
 ```go
-data := []byte("hi")
+err := client.InvokeBindingWithIdentity(ctx, "binding-name", "create", person)
+```
+
+Or, for more control, with an instance of the `BindingData`
+
+
+```go
+data := &BindingData{
+    Data:      []byte("your content"),
+    Operation: "create",
+    Metadata:  map[string]string{ "k1":"v1", "k2": "v2" },
+}
 err := client.InvokeBindingWithData(ctx, "binding-name", "create", data)
 ```
 
 ### Service Invocation 
 
-Finally, for service, you can either 
+
+Similarly with service to service invocation, you can invoke without any data
 
 ```go
-out, err := client.InvokeService(ctx, "service-name", "method-name", person)
+out, err := client.InvokeService(ctx, "service-name", "method-name")
 ```
 
-Or serialize the person yourself and 
+Or, with an instance of your own struct
 
 ```go
-content, _ := json.Marshal(data)
-out, err := client.InvokeServiceWithData(ctx, "service-name", "method-name", content)
+err := client.InvokeServiceWithIdentity(ctx, "service-name", "method-name", person)
 ```
 
+Or, invoke it directly with your own content 
 
+
+```go
+data := []byte("your content")
+err := client.InvokeServiceWithData(ctx, "binding-name", "create", data)
+```
 
 ## Disclaimer
 
