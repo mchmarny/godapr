@@ -64,6 +64,24 @@ type Client struct {
 	timeout time.Duration
 }
 
+// Health checks the Dapr client connection status and Dapr API health
+func (c *Client) Health() (ok bool, err error) {
+	url := fmt.Sprintf("%s/v1.0/healthz", c.url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	client := &http.Client{
+		Timeout: c.timeout,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, errors.Wrapf(err, "error executing %+v", req)
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
 func (c *Client) exec(ctx trace.SpanContext, req *http.Request) (out []byte, status int, err error) {
 	if req == nil {
 		err = errors.New("nil request")

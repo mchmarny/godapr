@@ -4,14 +4,20 @@
 Inside of the [example/service](./example/service) directory run this:
 
 ```shell
-dapr run --app-id example-service --app-port 8080 --protocol http go run main.go
+dapr run --app-id example-service \
+         --app-port 8080 \
+         --protocol http \
+         --components-path ./components \
+         go run main.go 
 ```
 
 ## Client 
 Inside of the [example/client](./example/client) directory run this:
 
 ```shell
-dapr run --app-id example-client go run main.go
+dapr run --app-id example-client \
+         --components-path ./components \
+         go run main.go
 ```
 
 ## Disclaimer

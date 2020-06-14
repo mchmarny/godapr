@@ -67,8 +67,7 @@ func main() {
 	fmt.Printf("send: ping, got: %s\n", msgOut.Response)
 
 	// invoke output binding named 'example-http-binding'
-	// uses https://http2.pro/doc/api to check for HTTP/2
-	_, err = client.InvokeBinding(ctx, "example-http-binding", data)
+	_, err = client.InvokeBinding(ctx, "example-http-binding", "create", data)
 	if err != nil {
 		panic(err)
 	}

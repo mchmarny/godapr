@@ -36,6 +36,9 @@ func (c *Client) InvokeBindingWithData(ctx trace.SpanContext, binding string, da
 }
 
 // InvokeBinding serializes data and invokes InvokeBindingWithData
-func (c *Client) InvokeBinding(ctx trace.SpanContext, binding string, in interface{}) (out []byte, err error) {
-	return c.InvokeBindingWithData(ctx, binding, &BindingData{Data: in})
+func (c *Client) InvokeBinding(ctx trace.SpanContext, binding, operation string, in interface{}) (out []byte, err error) {
+	return c.InvokeBindingWithData(ctx, binding, &BindingData{
+		Data:      in,
+		Operation: operation,
+	})
 }
