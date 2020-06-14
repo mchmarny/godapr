@@ -29,3 +29,9 @@ type BindingData struct {
 	Data      interface{}       `json:"data,omitempty"`
 	Metadata  map[string]string `json:"metadata,omitempty"`
 }
+
+// Subscription defines the result of /dapr/subscribe
+type Subscription struct {
+	Topic string `json:"topic"`
+	Route string `json:"route"`
+}
